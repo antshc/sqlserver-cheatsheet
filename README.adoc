@@ -9,3 +9,5 @@ The Cost represents the estimated amount of resources (CPU, I/O, memory, etc.) S
 _Operator Cost (Node Relative)_ Inside a single query’s execution plan, each operator (like a Clustered Index Scan, Sort, Hash Join) shows its individual cost as a percentage of the total query cost.
 Meaning: “This step accounts for X% of this query’s total estimated cost.”
 
+_Read plan_ -  read the plan from right to left, hovering our mouse over each operator. Each operator is kinda like a standalone program that has its own dedicated work to do, and produces a specific output.
+
