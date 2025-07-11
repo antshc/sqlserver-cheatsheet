@@ -1,0 +1,34 @@
+== 🧠 Easy Recall: Why `SELECT *` is Bad (esp. with `ORDER BY`)
+
+=== 🎯 3 Main Problems (The “BIG” Rule)
+* **B** – *Bloated rows*: Fetches all columns, increasing row size, memory, and I/O.
+* **I** – *Index ignored*: Prevents use of covering indexes; forces clustered index scan or key lookups.
+* **G** – *Greater sort cost*: Sorts full rows (load all columns in memory), needs larger memory grant, may spill to tempdb.
+
+=== 🚦 Execution Plan Comparison
+[cols="2,2", options="header"]
+|===
+| With `SELECT ColA, ColB`
+| With `SELECT *`
+
+| ✅ Index Seek/Scan (fast)
+| ❌ Clustered Index Scan (slow)
+
+| ✅ No Sort (if index matches)
+| ❌ Sort operator added
+
+| ✅ Small memory grant
+| ❌ Large memory grant (risk spill)
+|===
+
+=== ✅ Best Practice
+*“Only ask for what you need.”*
+[source,sql]
+----
+SELECT ColA, ColB
+FROM LargeTable
+ORDER BY ColA;
+----
+
+=== 🔥 Mnemonic
+🏃‍♂️ *“BIG rows IGNORE indexes, GREEDY sort!”*
