@@ -1,0 +1,76 @@
+= SET STATISTICS IO, TIME ON in SQL Server
+
+These are session-level settings to help analyze query performance by showing **I/O** and **time** statistics in the Messages tab of SSMS.
+
+== ✅ SET STATISTICS IO ON
+
+Enables I/O statistics for queries.
+
+=== 📦 Example Output
+----
+Table 'Products'. Scan count 1, logical reads 120, physical reads 5, read-ahead reads 10, lob logical reads 0, lob physical reads 0, lob read-ahead reads 0.
+----
+
+=== 📌 Key Terms
+[cols="1,3"]
+|===
+| Term                   | Meaning
+
+| *Scan count*           | Number of times the table/index was accessed.
+| *Logical reads*        | Pages read from memory (Buffer Pool).
+| *Physical reads*       | Pages read from disk (not in Buffer Pool).
+| *Read-ahead reads*     | Pages pre-fetched into memory.
+| *LOB reads*            | Reads of Large Objects (e.g., varchar(max)).
+|===
+
+== ✅ SET STATISTICS TIME ON
+
+Enables CPU and elapsed time statistics.
+
+=== 📦 Example Output
+----
+SQL Server Execution Times:
+   CPU time = 156 ms,  elapsed time = 432 ms.
+----
+
+=== 📌 Key Terms
+[cols="1,3"]
+|===
+| Term             | Meaning
+
+| *CPU time*       | Total CPU processing time used by the query (ms).
+| *Elapsed time*   | Total wall-clock time to execute the query (ms).
+|===
+
+== 📝 Why Use Them?
+[cols="1,3"]
+|===
+| Scenario                      | Usefulness
+
+| Debugging slow queries        | Identify high I/O or CPU cost.
+| Tuning indexes                | See if index reduces logical reads.
+| Comparing query rewrites      | Check which query version is faster.
+|===
+
+== 🏃 How to Use
+[source,sql]
+----
+SET STATISTICS IO ON;
+SET STATISTICS TIME ON;
+
+-- Your query
+SELECT * FROM Products WHERE ProductID = 42;
+
+-- Turn off when done
+SET STATISTICS IO OFF;
+SET STATISTICS TIME OFF;
+----
+
+== 🚦 Quick Summary
+[cols="1,3"]
+|===
+| Command                  | Shows
+
+| `SET STATISTICS IO ON`   | Table/page I/O details (logical, physical reads).
+| `SET STATISTICS TIME ON` | CPU and elapsed execution time of queries.
+|===
