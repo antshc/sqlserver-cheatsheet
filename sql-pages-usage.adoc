@@ -1,0 +1,88 @@
+= Easy Recall: SQL Server Pages, Rows, Columns, Indexes
+Anton Shcherbyna <Senior .NET Developer>
+v1.0
+
+== 📦 What’s a Page?
+* Smallest storage unit in SQL Server
+* Size: 8 KB (8192 bytes)
+** 96 bytes = header (metadata)
+** ~8096 bytes for row data
+
+== 🗄 How Data Fits
+
+[cols="30,70", options="header"]
+|===
+| Item                   | Stored On
+| Fixed-length columns    | Inline in Data Pages
+| Variable-length columns | Inline *if fits*
+| Large Objects (LOB)     | LOB Pages (Type 0x03)
+| **Rows > 8,060 bytes**  | ROW_OVERFLOW Pages (0x01)
+|===
+
+=== 🚨 When ROW_OVERFLOW Pages Are Used
+* Triggered if total row size **exceeds 8,060 bytes** (page = 8 KB).
+* Happens with **many variable-length columns** (`VARCHAR`, `NVARCHAR`, etc.).
+* Fixed-length data stored inline first; overflow spills to ROW_OVERFLOW pages.
+* ROW_OVERFLOW pages are linked to the main row via a pointer.
+
+Example:
+[source,sql]
+----
+CREATE TABLE WideTable (
+    ID INT,
+    Col1 NVARCHAR(4000),
+    Col2 NVARCHAR(4000),
+    Col3 NVARCHAR(4000)
+);
+----
+
+== 🌳 How Indexes Use Pages
+
+[cols="35,65", options="header"]
+|===
+| Index Type               | Leaf Pages Store
+| Clustered Index          | Actual rows (ordered)
+| Non-Clustered Index      | Key + **Row Locator**
+| Non-Clustered w/ INCLUDE | Key + Row Locator + **INCLUDE columns**
+| B-Tree Levels            | Intermediate Index Pages
+| Large Objects            | LOB Pages
+|===
+
+== 🏷 Row Locator Types (Non-Clustered Index)
+
+[cols="30,30,40", options="header"]
+|===
+| Table Type        | Row Locator Type                  | Why
+| Heap (no Clustered)| **RID (Row Identifier)**          | Points to page:slot directly
+| Clustered Table    | **Clustering Key (Key Lookup)**   | Uses clustered index key to find row
+|===
+
+== 🔹 INCLUDE Columns
+* Stored **only at leaf level** of Non-Clustered indexes.
+* Not part of the index key (don’t affect sort order).
+* Helps make **covering indexes** to avoid row lookups.
+
+== 📊 Page Anatomy
+
+[cols="40,20", options="header"]
+|===
+| Page Component    | Size
+| Header            | 96 bytes
+| Data Area         | ~8 KB
+| Row Offset Array  | Tracks row locations
+|===
+
+== 🏗 Bigger Blocks
+* **8 Pages = 1 Extent (64 KB)**
+** Uniform Extents: 1 object
+** Mixed Extents: multiple objects
+
+== ⚡ Why It Matters (Quick)
+* ✅ Too wide rows → ROW_OVERFLOW = more I/O
+* ✅ Index lookups → RID vs Clustering Key impacts performance
+* ✅ INCLUDE columns = avoid row lookups
+* ✅ Page splits = fragmentation
+* ✅ Hot Pages = latch contention
+
+== 📝 One-Liner Summary
+👉 “SQL Server stores rows in 8 KB pages; wide variable-length rows spill into ROW_OVERFLOW pages; Non-Clustered indexes use Row Locators (RID for heaps, Clustering Key for clustered tables) and INCLUDE columns to avoid lookups.”
