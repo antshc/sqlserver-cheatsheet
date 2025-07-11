@@ -1,0 +1,82 @@
+= SQL Logical Query Execution Order Cheat Sheet
+Anton Shcherbyna
+:toc:
+:icons: font
+
+== 🧠 SQL Logical Query Execution Order (Easy Recall)
+
+=== 🔥 Mnemonic
+👉 *“F J W G H S D O L”*  
+_Think: "Funny Joins With Good Happy SQL Data Output Logic"_
+
+[cols="1,2,4,3", options="header"]
+|===
+| #  | Clause       | Action                                  | Hint
+
+| 1️⃣ | FROM         | Find base tables & load data            | Start from the source
+| 2️⃣ | JOIN         | Combine tables (apply ON conditions)    | Join rows together
+| 3️⃣ | WHERE        | Filter rows (before grouping)           | Filter individual rows
+| 4️⃣ | GROUP BY     | Group rows for aggregation              | Group them up
+| 5️⃣ | HAVING       | Filter groups (after aggregation)       | Have good groups
+| 6️⃣ | SELECT       | Pick columns & expressions              | Select what to show
+| 7️⃣ | DISTINCT     | Remove duplicates                       | Make results unique
+| 8️⃣ | ORDER BY     | Sort rows                               | Order your results
+| 9️⃣ | LIMIT        | Return a subset (pagination)            | Limit what you see
+|===
+
+---
+
+== 🚦 Why This Order?
+- 📝 **FROM/JOIN** → data is loaded & combined first.
+- 🔥 **WHERE** → filters rows **before aggregation**.
+- 📊 **GROUP BY + HAVING** → aggregate & filter groups.
+- 🎯 **SELECT** → only now compute selected columns.
+- 📦 **DISTINCT/ORDER BY/LIMIT** → final shaping.
+
+---
+
+== 🏁 Example Flow
+
+[source,sql]
+----
+SELECT Dept, COUNT(*) AS Cnt
+FROM Employees
+JOIN Departments ON DeptId = Id
+WHERE Salary > 50000
+GROUP BY Dept
+HAVING COUNT(*) > 3
+ORDER BY Cnt DESC
+LIMIT 10;
+----
+
+[cols="1,5"]
+|===
+| Step | Action
+
+| 1️⃣   | Get `Employees`, join with `Departments`.
+| 2️⃣   | Filter `Salary > 50000`.
+| 3️⃣   | Group rows by `Dept`.
+| 4️⃣   | Keep groups with more than 3 rows (`HAVING`).
+| 5️⃣   | Select `Dept, COUNT(*) AS Cnt`.
+| 6️⃣   | Sort by `Cnt DESC`.
+| 7️⃣   | Return top 10 rows.
+|===
+
+---
+
+== 🔥 Super-Compact Summary
+
+[cols="2,5", options="header"]
+|===
+| Step         | What Happens
+
+| FROM         | Load tables
+| JOIN         | Combine rows
+| WHERE        | Row filter
+| GROUP BY     | Group rows
+| HAVING       | Filter groups
+| SELECT       | Choose columns
+| DISTINCT     | Remove duplicates
+| ORDER BY     | Sort results
+| LIMIT        | Return N rows
+|===
