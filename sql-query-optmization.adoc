@@ -23,8 +23,147 @@
 | Test changes against workload to verify performance gain
 |===
 
+
+= 1️⃣ Baseline & Monitor
+
+== 📖 What is Baseline & Monitor?
+
+**Baseline** = A snapshot of your system’s *normal* performance over time.  
+**Monitoring** = Ongoing tracking to spot deviations (bottlenecks, regressions).
+
+You need this phase to:  
+* ✅ Understand normal vs abnormal behavior
+* ✅ Justify optimizations (data-driven)
+* ✅ Track improvements after tuning
+
+---
+
+== ✅ Key Metrics to Baseline
+
+|===
+| Metric                  | Why It Matters
+
+| **CPU Usage**           | High CPU = queries or bad parallelism
+| **Memory Usage**        | Low memory = paging, poor cache performance
+| **Disk I/O**            | High reads/writes = missing indexes, bad queries
+| **Wait Stats**          | Shows resource contention bottlenecks
+| **Batch Requests/sec**  | Indicates workload throughput
+| **Page Life Expectancy**| Low PLE = memory pressure
+|===
+
+---
+
+== 🚀 How To Establish Baseline
+
+=== 1️⃣ Use Built-in SQL Server DMVs
+
+==== 🔥 Wait Statistics (Overall bottlenecks)
+[source,sql]
+----
+SELECT wait_type, 
+       wait_time_ms / 1000.0 AS wait_time_sec,
+       waiting_tasks_count,
+       wait_time_ms / waiting_tasks_count AS avg_wait_ms
+FROM sys.dm_os_wait_stats
+WHERE wait_type NOT IN (
+    'CLR_SEMAPHORE','LAZYWRITER_SLEEP','RESOURCE_QUEUE','SLEEP_TASK',
+    'SLEEP_SYSTEMTASK','SQLTRACE_BUFFER_FLUSH','WAITFOR','LOGMGR_QUEUE',
+    'CHECKPOINT_QUEUE','REQUEST_FOR_DEADLOCK_SEARCH','XE_TIMER_EVENT','BROKER_TO_FLUSH'
+)
+ORDER BY wait_time_ms DESC;
+----
+📝 *Focus on top waits like `CXPACKET`, `PAGEIOLATCH`, `LCK_M_XX`.*
+
+---
+
+==== 🔥 CPU, Memory, I/O Overview
+[source,sql]
+----
+SELECT
+    (SELECT COUNT(*) FROM sys.dm_exec_requests) AS [Current Requests],
+    (SELECT COUNT(*) FROM sys.dm_exec_connections) AS [Current Connections],
+    (SELECT total_physical_memory_kb/1024 FROM sys.dm_os_sys_memory) AS [Total Memory MB],
+    (SELECT available_physical_memory_kb/1024 FROM sys.dm_os_sys_memory) AS [Available Memory MB],
+    (SELECT system_memory_state_desc FROM sys.dm_os_sys_memory) AS [Memory State];
+----
+
+---
+
+==== 🔥 I/O Stats (Top Tables by Reads/Writes)
+[source,sql]
+----
+SELECT TOP 10
+    DB_NAME(database_id) AS DatabaseName,
+    OBJECT_NAME(object_id, database_id) AS TableName,
+    user_seeks + user_scans + user_lookups + user_updates AS AccessCount
+FROM sys.dm_db_index_usage_stats
+ORDER BY AccessCount DESC;
+----
+
+---
+
+=== 2️⃣ Use PerfMon (Performance Monitor)
+
+Track these counters:
+
+|===
+| Counter                                   | Object
+
+| % Processor Time                          | Processor(_Total)
+| Page Life Expectancy                      | SQLServer:Buffer Manager
+| SQL Compilations/sec                      | SQLServer:SQL Statistics
+| SQL Re-Compilations/sec                   | SQLServer:SQL Statistics
+| Batch Requests/sec                        | SQLServer:SQL Statistics
+| Disk Reads/sec, Disk Writes/sec           | PhysicalDisk
+|===
+🎯 *Goal:* Run for 24–48 hours to capture real workload.
+
+---
+
+=== 3️⃣ Use Query Store (SQL Server 2016+)
+
+Enable Query Store:
+[source,sql]
+----
+ALTER DATABASE [YourDatabaseName]  
+SET QUERY_STORE = ON;
+----
+Track:
+* Top resource-consuming queries over time
+* Execution plan regressions
+
+---
+
+=== 4️⃣ Third-Party Tools (Optional)
+
+* ✅ Redgate SQL Monitor – live dashboards
+* ✅ SolarWinds DPA – waits and resource graphs
+* ✅ SentryOne – deep insights on waits, plans
+
+---
+
+== 📊 Example: Baseline Table Template
+
+|===
+| Metric                  | Value          | Threshold / Notes
+
+| CPU Usage               | 40–60% avg     | Alert if >80% for 5 min
+| Memory Usage            | 70% of total   | Alert if >90%
+| Page Life Expectancy    | 5000+          | Alert if <300
+| Disk Queue Length       | <2             | Alert if >2 consistently
+| Batch Requests/sec      | 500–1500       | Watch for big drops
+|===
+
+---
+
+== 🏁 Why Baseline?
+
+* ✅ Know what’s “normal”
+* ✅ Detect regressions after deployments
+* ✅ Prove ROI of optimizations
+
   
-= 1. Query Analysis
+= 2️⃣ Query Analysis
 
 
   
