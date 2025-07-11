@@ -1,0 +1,188 @@
+
+= 🏁 Full Optimization Process (Phases)
+
+|===
+| Phase | Description
+
+| 1️⃣ Baseline & Monitor
+| Establish baseline metrics (CPU, memory, I/O, waits)
+
+| 2️⃣ Query Analysis
+| Find expensive queries using DMVs, Query Store, etc.
+
+| 3️⃣ Execution Plan Review
+| Analyze execution plans for inefficiencies
+
+| 4️⃣ Index Tuning
+| Add missing indexes, remove unused, optimize existing
+
+| 5️⃣ Query Refactoring
+| Rewrite queries, apply pagination, avoid SELECT *
+
+| 6️⃣ Testing & Validation
+| Test changes against workload to verify performance gain
+|===
+
+  
+= 1. Query Analysis
+
+
+  
+== ✅ 1. Find Most Expensive Queries
+
+These queries consume the **most CPU, reads, or writes**.
+
+=== 📌 Top CPU-Consuming Queries
+[source,sql]
+----
+SELECT TOP 10
+    qs.total_worker_time / qs.execution_count AS AvgCPU,
+    qs.execution_count,
+    qs.total_worker_time,
+    qs.total_elapsed_time / qs.execution_count AS AvgElapsedTime,
+    SUBSTRING(qt.text, (qs.statement_start_offset/2)+1,
+        ((CASE qs.statement_end_offset
+            WHEN -1 THEN DATALENGTH(qt.text)
+            ELSE qs.statement_end_offset
+          END - qs.statement_start_offset)/2)+1) AS QueryText,
+    qt.dbid, db.name AS DatabaseName
+FROM sys.dm_exec_query_stats qs
+CROSS APPLY sys.dm_exec_sql_text(qs.sql_handle) qt
+JOIN sys.databases db ON qt.dbid = db.database_id
+ORDER BY qs.total_worker_time DESC;
+----
+📝 *What it shows:* Queries that have consumed the most CPU time in total.
+
+---
+
+== ✅ 2. Find Queries with High I/O (Logical Reads/Writes)
+
+These queries may cause **heavy disk usage**.
+
+=== 📌 Top I/O-Intensive Queries
+[source,sql]
+----
+SELECT TOP 10
+    qs.total_logical_reads / qs.execution_count AS AvgReads,
+    qs.total_logical_writes / qs.execution_count AS AvgWrites,
+    qs.execution_count,
+    qs.total_logical_reads, qs.total_logical_writes,
+    SUBSTRING(qt.text, (qs.statement_start_offset/2)+1,
+        ((CASE qs.statement_end_offset
+            WHEN -1 THEN DATALENGTH(qt.text)
+            ELSE qs.statement_end_offset
+          END - qs.statement_start_offset)/2)+1) AS QueryText
+FROM sys.dm_exec_query_stats qs
+CROSS APPLY sys.dm_exec_sql_text(qs.sql_handle) qt
+ORDER BY qs.total_logical_reads DESC;
+----
+📝 *What it shows:* Queries causing the most logical I/O (buffer pool reads/writes).
+
+---
+
+== ✅ 3. Find Long-Running Queries
+
+Find queries that take **the longest time per execution**.
+
+=== 📌 Top Long-Running Queries
+[source,sql]
+----
+SELECT TOP 10
+    qs.total_elapsed_time / qs.execution_count AS AvgElapsedTime,
+    qs.execution_count,
+    qs.total_elapsed_time,
+    SUBSTRING(qt.text, (qs.statement_start_offset/2)+1,
+        ((CASE qs.statement_end_offset
+            WHEN -1 THEN DATALENGTH(qt.text)
+            ELSE qs.statement_end_offset
+          END - qs.statement_start_offset)/2)+1) AS QueryText
+FROM sys.dm_exec_query_stats qs
+CROSS APPLY sys.dm_exec_sql_text(qs.sql_handle) qt
+ORDER BY AvgElapsedTime DESC;
+----
+📝 *What it shows:* Queries with highest average execution time.
+
+---
+
+== ✅ 4. Find Most Frequently Executed Queries
+
+These might not be slow individually but can cause load due to high execution count.
+
+=== 📌 Most Frequently Executed Queries
+[source,sql]
+----
+SELECT TOP 10
+    qs.execution_count,
+    qs.total_elapsed_time / qs.execution_count AS AvgElapsedTime,
+    qs.total_worker_time / qs.execution_count AS AvgCPU,
+    SUBSTRING(qt.text, (qs.statement_start_offset/2)+1,
+        ((CASE qs.statement_end_offset
+            WHEN -1 THEN DATALENGTH(qt.text)
+            ELSE qs.statement_end_offset
+          END - qs.statement_start_offset)/2)+1) AS QueryText
+FROM sys.dm_exec_query_stats qs
+CROSS APPLY sys.dm_exec_sql_text(qs.sql_handle) qt
+ORDER BY qs.execution_count DESC;
+----
+📝 *What it shows:* Queries executed most frequently.
+
+---
+
+== ✅ 5. Check Active Expensive Queries (Live)
+
+For currently running queries that might be problematic.
+
+=== 📌 Currently Running Expensive Queries
+[source,sql]
+----
+SELECT
+    r.session_id,
+    r.status,
+    r.start_time,
+    r.cpu_time,
+    r.logical_reads,
+    r.reads, r.writes,
+    r.wait_type,
+    t.text AS QueryText,
+    db.name AS DatabaseName
+FROM sys.dm_exec_requests r
+CROSS APPLY sys.dm_exec_sql_text(r.sql_handle) t
+JOIN sys.databases db ON r.database_id = db.database_id
+ORDER BY r.cpu_time DESC;
+----
+📝 *What it shows:* Active queries ordered by CPU usage.
+
+---
+
+== 🚀 Next Steps After Finding Expensive Queries
+
+- 📊 **View Execution Plan**
++
+[source,sql]
+----
+SET STATISTICS IO ON;
+SET STATISTICS TIME ON;
+----
+Or right-click query → *Display Actual Execution Plan* in SSMS.
+
+- 🔥 **Look for:**
+  * Missing indexes (check missing index DMVs)
+  * Table scans or key lookups
+  * High sort operations
+
+- 🛠 **Refactor:**
+  * Rewrite inefficient queries
+  * Add proper indexes
+  * Avoid `SELECT *`
+
+---
+
+== 📌 Tools That Help
+
+- **SQL Server Management Studio (SSMS)**
+  * Query Store: Tracks query performance over time
+  * Activity Monitor: Shows current expensive queries
+- **Third-Party Tools**
+  * SentryOne, SolarWinds DPA, Redgate SQL Monitor
+
+---
