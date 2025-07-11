@@ -1,0 +1,11 @@
+== SQL Server query analyzer
+_Execution Plan_ – A static blueprint showing how SQL Server planned (Estimated Plan) or executed (Actual Plan) your query. Used for analyzing and tuning query performance after execution.
+
+_Live Query Statistics_ – A dynamic, real-time view showing query progress while it’s running, including active operators and percentage completion. Used for monitoring long-running queries.
+
+_What is “Cost” in SQL Query Analyzer?_
+The Cost represents the estimated amount of resources (CPU, I/O, memory, etc.) SQL Server thinks it will need to execute that part of the query.
+
+_Operator Cost (Node Relative)_ Inside a single query’s execution plan, each operator (like a Clustered Index Scan, Sort, Hash Join) shows its individual cost as a percentage of the total query cost.
+Meaning: “This step accounts for X% of this query’s total estimated cost.”
+
