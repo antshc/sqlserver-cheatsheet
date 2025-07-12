@@ -301,7 +301,24 @@ ORDER BY r.cpu_time DESC;
 ----
 SET STATISTICS IO ON;
 SET STATISTICS TIME ON;
+
+
+
 ----
+[source,sql]
+----
+SET STATISTICS IO, TIME ON;
+GO
+SELECT Id
+  FROM dbo.Users
+  WHERE LastAccessDate > '2014/07/01'
+  ORDER BY LastAccessDate;
+GO 50 -- Run query 50 times
+SET STATISTICS IO, TIME OFF;
+
+----
+
+
 Or right-click query → *Display Actual Execution Plan* in SSMS.
 
 - 🔥 **Look for:**
