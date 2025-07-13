@@ -333,6 +333,12 @@ Or right-click query → *Display Actual Execution Plan* in SSMS.
 
 ---
 
+
+use `DBCC SHOW_STATISTICS` to optimize queries.
+You analyze statistics because the query optimizer’s choices (seeks vs scans, join type, etc.) depend on cardinality estimates based on index statistics.
+
+Checking histogram/density helps you understand why estimated rows differ from actual rows (bad estimates → bad plan).
+
 == 📌 Tools That Help
 
 - **SQL Server Management Studio (SSMS)**
@@ -342,3 +348,5 @@ Or right-click query → *Display Actual Execution Plan* in SSMS.
   * SentryOne, SolarWinds DPA, Redgate SQL Monitor
 
 ---
+
+
