@@ -15,3 +15,7 @@ _Estimated Number of Executions_ is based on how many rows SQL Server thought wa
 _Estimated Number of Rows_ – how many rows EACH key lookup will return.
 _Number of Executions_ – how many times we actually did it, based on how many rows actually came out of the index seek.
 _Actual Number of Rows_ – the total number of rows that came out of ALL key lookups (not each one.)
+
+
+_Logical Read_	Reading a data page from buffer cache (memory). Even if SQL Server has to go to disk first.
+_Physical Read_	Reading a data page directly from disk into the buffer cache (because it wasn’t there yet).
