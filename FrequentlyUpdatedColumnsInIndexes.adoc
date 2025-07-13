@@ -1,0 +1,30 @@
+= Remediations for Frequently Updated Columns in Indexes
+
+== ✅ Remediations
+
+* 🔥 **Avoid indexing volatile columns directly**
+** Remove the column from nonclustered index keys and INCLUDE lists.
+** Let SQL Server use Key Lookups to fetch it when necessary.
+
+* 📝 **Use a computed column without PERSISTED**
+** If the column is derived (e.g., `Age` from `DateOfBirth`), calculate it dynamically.
+** Avoid storage/maintenance overhead.
+
+* 🎯 **Replace with filtered indexes**
+** Create a partial index only for rows where the volatile column matters (e.g., `Age BETWEEN 18 AND 65`).
+** Reduces update impact to a subset of rows.
+
+* 📦 **Denormalize volatile data into a separate table**
+** Move frequently changing columns into a dedicated table.
+** Keep indexes on the main table lean.
+
+* 🔍 **Reevaluate query patterns**
+** If the column isn’t used for filtering or sorting, drop it from indexes.
+** Fetch it after narrowing rows using other indexed columns.
+
+* 📊 **Consider indexing a derived or bucketed version**
+** Replace `Age` with age groups or ranges to reduce update churn.
+** Example: `AgeGroup = CASE WHEN Age < 18 THEN 'Minor' ... END`
+
+* 🛠️ **Optimize memory (if necessary)**
+** Ensure enough buffer pool memory to reduce lock contention from index updates.
