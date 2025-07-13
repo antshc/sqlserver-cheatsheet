@@ -1,0 +1,169 @@
+= How SQL Server Uses DBCC SHOW_STATISTICS in the Query Optimizer
+
+This guide explains step by step how SQL Server uses the three sections of `DBCC SHOW_STATISTICS` to optimize queries.
+
+---
+
+== 🧠 Step-by-Step: How SQL Server Uses Each Section
+
+=== 🔥 Step 1: Parse the Query
+When you run a query like:
+[source,sql]
+----
+SELECT * FROM dbo.Users WHERE LastAccessDate = '2009-07-01';
+----
+SQL Server parses it and identifies:
+* Tables and indexes involved.
+* Filters/predicates applied (`LastAccessDate = '2009-07-01'`).
+
+It then considers using `IX_LastAccessDate_Id` and checks its statistics.
+
+---
+
+=== 📊 Step 2: Load Statistics (Header Table)
+The optimizer reads the metadata from the **Header table**:
+
+[cols="2,4"]
+|===
+| Field              | Use in Optimizer
+
+| **Rows**
+| Total rows in the table – baseline for cardinality estimates.
+
+| **Rows Sampled**
+| Indicates how reliable the statistics are (full scan vs sampled).
+
+| **Steps**
+| Number of histogram buckets (higher steps = more precise distribution).
+
+| **Density**
+| Quick fallback estimate if histogram isn’t applicable.
+
+| **Average key length**
+| Helps compute index size and I/O cost.
+
+| **String Index**
+| Whether string indexes are used.
+|===
+
+This metadata sets the **context for cardinality estimation**.
+
+---
+
+=== 📐 Step 3: Estimate Equality Predicates (Density Vector Table)
+For queries like:
+[source,sql]
+----
+WHERE LastAccessDate = '2009-07-01'
+----
+SQL Server checks the **Density Vector table**:
+
+[cols="2,4"]
+|===
+| Column         | Use
+
+| **All density**
+| Reciprocal of distinct values (~299,000 distinct = `3.34E-06` density). Helps estimate rows for equality filters.
+
+| **Average Length**
+| Helps compute row size and memory usage for operations (like hash joins).
+|===
+
+*If histogram has no matching step*, it uses:
+----
+Estimated Rows = All density × Total Rows
+----
+
+---
+
+=== 📦 Step 4: Estimate Range Predicates (Histogram Table)
+For range queries like:
+[source,sql]
+----
+WHERE LastAccessDate BETWEEN '2009-01-01' AND '2009-12-31'
+----
+SQL Server consults the **Histogram**:
+
+[cols="2,4"]
+|===
+| Column               | Use
+
+| **RANGE_HI_KEY**
+| Upper bounds of histogram buckets.
+
+| **RANGE_ROWS**
+| Sum rows between this and previous RANGE_HI_KEY.
+
+| **EQ_ROWS**
+| Rows exactly equal to RANGE_HI_KEY.
+
+| **DISTINCT_RANGE_ROWS / AVG_RANGE_ROWS**
+| Helps estimate rows within ranges with duplicates.
+|===
+
+This gives accurate estimates for range queries and helps choose:
+* Index Seek (few rows)
+* Table Scan (many rows)
+* Or a combination.
+
+---
+
+=== 🔄 Step 5: Combine with Other Statistics
+For multi-column indexes (`LastAccessDate, Id`), SQL Server uses **multi-column density vectors** for queries like:
+[source,sql]
+----
+WHERE LastAccessDate = '2009-07-01' AND Id = 42
+----
+This improves estimates for multiple predicates.
+
+---
+
+=== ⚡ Step 6: Feed Cardinality Estimates into Cost Model
+The estimated rows feed into:
+* Join algorithm choice (Nested Loops vs Hash Join)
+* Memory grant size for Sorts or Hashes
+* Index Seek vs Scan decision
+
+Example:
+
+[cols="3,2,2"]
+|===
+| Predicate                                | Estimated Rows       | Plan Choice
+
+| `LastAccessDate = '2024-01-01'`
+| 1 row (from histogram EQ_ROWS)
+| Index Seek + Key Lookup
+
+| `LastAccessDate BETWEEN '2024-01-01' AND '2024-12-31'`
+| 50,000 rows (from histogram RANGE_ROWS)
+| Table Scan
+|===
+
+---
+
+=== 🏁 Step 7: Generate the Execution Plan
+Finally, SQL Server:
+* Picks the **lowest estimated cost plan**.
+* Embeds the estimated row counts into the execution plan.
+
+*Stale statistics* can lead to:
+* Bad plan choice (seek vs scan)
+* Over/under allocation of memory
+
+---
+
+== 📝 Summary Table
+
+[cols="1,4"]
+|===
+| Section             | Purpose in Optimizer
+
+| **Header**
+| Metadata about statistics: total rows, update time, sampling quality.
+
+| **Density Vector**
+| Estimates rows for equality filters. Used when histogram doesn’t apply.
+
+| **Histogram**
+| Estimates rows for range queries and equality matches when data exists.
+|===
