@@ -1,0 +1,6 @@
+@EfSqlPerformance.Api_HostAddress = http://localhost:5272
+
+GET {{EfSqlPerformance.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

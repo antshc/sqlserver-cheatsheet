@@ -1,0 +1,28 @@
+== EF Core Scaffold Command for StackOverflow2010 Database
+
+This command scaffolds the database models and DbContext into the `EfSqlPerformance.Api` project.
+
+[source,bash]
+----
+dotnet ef dbcontext scaffold "Server=localhost,1433;Database=StackOverflow2010;User Id=sa;Password=yourStrong(!)Password;TrustServerCertificate=True;" Microsoft.EntityFrameworkCore.SqlServer --project EfSqlPerformance.Api --context-dir Data --output-dir Data\Models --context StackOverflowContext --use-database-names --no-onconfiguring --nullable --no-pluralize
+----
+
+=== Options Explained
+[cols="1,3"]
+|===
+| Option                        | Description
+
+| `Server=localhost,1433`       | SQL Server instance at `localhost` port `1433`
+| `Database=StackOverflow2010`  | Target database name
+| `User Id=sa`                  | SQL Server username
+| `Password=yourStrong(!)Password` | SQL Server password
+| `TrustServerCertificate=True` | Accept self-signed SSL certificates
+| `--project EfSqlPerformance.Api` | Target project for scaffolding
+| `--context-dir Data`          | DbContext will be placed in the `Data` folder
+| `--output-dir Data\Models`    | Models will be placed in the `Data\Models` folder
+| `--context StackOverflowContext` | Names the generated DbContext class
+| `--use-database-names`        | Keeps table and column names exactly as in the database
+| `--no-onconfiguring`          | Excludes connection string from the generated DbContext
+| `--nullable`                  | Enables nullable reference types
+| `--no-pluralize`              | Prevents pluralization of entity class names
+|===
