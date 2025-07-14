@@ -1,0 +1,71 @@
+= SQL Server Index: Key vs INCLUDE
+
+== 🌱 Quick Summary
+
+|===
+| Feature                    | Key Columns                              | INCLUDE Columns                         
+
+| Participate in ordering?   | ✅ Yes (sorted in B-Tree)               | ❌ No (not sorted, stored at leaf level)  
+| Affects index uniqueness?  | ✅ Yes (part of uniqueness)             | ❌ No                                    
+| Used for filtering/search? | ✅ Yes (seek and scan predicates)        | ❌ No                                    
+| Returned by query?         | ✅ Yes (if in key)                      | ✅ Yes (at leaf level, covers query)     
+| Storage cost?              | 🟥 Higher (stored in every B-Tree level) | 🟩 Lower (only in leaf level)            
+| Can be used in WHERE?      | ✅ Yes                                   | ❌ No                                    
+| Can be used in JOIN/ORDER BY?| ✅ Yes                                 | ❌ No                                    
+|===
+
+== ✅ Put Columns in **KEY** When
+* They are used in `WHERE`, `JOIN`, or `ON` clauses (seek/filter).
+* They are used in `ORDER BY` (because keys define the sort order).
+* They are needed to make the index **unique** (if it's a unique index).
+* They are part of `GROUP BY` or `DISTINCT` operations.
+
+.Example
+[source,sql]
+----
+-- Query
+SELECT Name, Email FROM Customers
+WHERE Country = 'USA' AND State = 'CA'
+ORDER BY SignupDate DESC
+----
+
+📌 Index: `(Country, State, SignupDate)`  
+- `Country`, `State` = **Key** (used for filtering)
+- `SignupDate` = **Key** (for ordering)
+
+== ➕ Put Columns in **INCLUDE** When
+* They are **only needed to cover the SELECT** list (not filtered/sorted).
+* They are **large** (e.g., `nvarchar(MAX)`, `varchar(1000)`) and don’t need to be in B-Tree levels.
+* You want to avoid **key size limits** (900 bytes or 16 columns max in key).
+* They are **frequently read but not searched on**.
+
+.Example
+[source,sql]
+----
+-- Query
+SELECT Name, Email FROM Customers
+WHERE Country = 'USA'
+----
+
+📌 Index: `(Country) INCLUDE (Name, Email)`  
+- `Country` = **Key** (filtering)  
+- `Name`, `Email` = **INCLUDE** (to avoid key lookups)
+
+== ⚠️ Why Care?
+* **Key columns** are stored in every level of the B-Tree (root, intermediate, leaf).
+* **INCLUDE columns** are stored **only at the leaf level**, so they use less space and reduce index maintenance overhead.
+
+== 📝 Rule of Thumb
+
+|===
+| Question                                        | Put in Key? | Put in INCLUDE?
+
+| Used in WHERE/JOIN predicates?                  | ✅ Yes      | ❌ No
+| Needed for sorting (ORDER BY)?                  | ✅ Yes      | ❌ No
+| Needed only to satisfy SELECT list?             | ❌ No       | ✅ Yes
+| Large column (e.g., nvarchar(MAX), XML)?         | ❌ No       | ✅ Yes
+| Needed to enforce uniqueness?                   | ✅ Yes      | ❌ No
+|===
+
+== 🚀 Final Tip
+If you see **Key Lookup** in execution plans, it’s a sign the index is missing some **INCLUDE** columns.
