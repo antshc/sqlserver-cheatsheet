@@ -1,11 +1,19 @@
 using EfSqlPerformance.Api.Data;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Xunit.Abstractions;
 
 namespace EfSqlPerformance.Test
 {
     public class UsersQueryTest
     {
         private const string ConnectionString = "Server=localhost,1433;Database=StackOverflow2010;User Id=sa;Password=yourStrong(!)Password;TrustServerCertificate=True;";
+        private readonly ITestOutputHelper _output;
+
+        public UsersQueryTest(ITestOutputHelper output)
+        {
+            _output = output;
+        }
 
         [Fact]
         public void GetTopUsersTest()
@@ -13,6 +21,8 @@ namespace EfSqlPerformance.Test
 
             var options = new DbContextOptionsBuilder<StackOverflowContext>()
                 .UseSqlServer(ConnectionString)
+                .LogTo(message => _output.WriteLine(message), LogLevel.Information) // Logs to xUnit
+                .EnableSensitiveDataLogging() // Shows parameter values
                 .Options;
 
             using var context = new StackOverflowContext(options);
