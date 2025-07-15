@@ -56,7 +56,7 @@
   - Follow/unfollow tags.
   - Paginate through tag-specific lists.
 
-12. Get Top 10 Users by Rating
+12. Get Top 10000 Users by Rating
 - Simulate users viewing a leaderboard or top users page.
 - Query returns top 10 users ranked by reputation.
 - Includes sorting and caching behavior under high load.
