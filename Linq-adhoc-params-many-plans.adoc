@@ -1,6 +1,14 @@
 = EF Core LINQ Ad Hoc vs Parameterized Queries (Not Obvious Cases)
 
-This cheatsheet shows **common EF Core LINQ patterns** that lead to **ad hoc queries** in SQL Server and their **parameterized fixes**.
+== ❗ Why Ad Hoc Queries Are Bad
+Ad hoc queries in EF Core happen when literal values or dynamic expressions are **inlined into SQL** instead of being passed as parameters. This causes:
+- ⚡ **Plan Cache Pollution** – Every unique value generates a new cached plan.
+- 🖤 **Higher CPU & Memory Usage** – SQL Server compiles similar queries repeatedly.
+- 🐌 **Slower Performance** – No plan reuse for logically identical queries.
+
+To avoid this, ensure queries are **parameterized** so SQL Server can reuse execution plans.
+
+---
 
 == 🚨 Not Obvious Ad hoc EF Core LINQ Examples
 
