@@ -1,4 +1,13 @@
-= SQL Query Performance Issues – Master List (Extended)
+= SQL Query Performance Issues – Master List (Most Common First)
+
+== ✨ SELECT *
+Fetching all columns retrieves unnecessary data and prevents use of covering indexes, leading to more I/O.
+
+*Root Cause:*  
+Retrieves all columns, increases I/O, and prevents index-only scans.  
+
+*Remediation:*  
+Select only needed columns to reduce payload and allow covering indexes.  
 
 == 📦 Insufficient or Poor Indexes
 This issue occurs when queries frequently scan entire tables because there are no indexes or the wrong indexes for the workload. Without proper indexing, even simple filters or joins can become very expensive.
@@ -18,122 +27,14 @@ Outdated or missing stats cause poor cardinality estimates and bad plans.
 *Remediation:*  
 Update statistics regularly with AUTO_UPDATE_STATISTICS or scheduled jobs.  
 
-== 📝 Bad T-SQL
-Poor query writing practices, like using SELECT * or unnecessary nested subqueries, can cause excessive data retrieval, blocking, and inefficient plans.
+== 🔗 Inefficient Joins
+Joins are essential for combining data from multiple tables, but if not implemented properly, they can lead to massive intermediate result sets, excessive memory usage, and network overhead.
 
 *Root Cause:*  
-Poorly written SQL (SELECT *, unnecessary joins) increases workload.  
+Using implicit join syntax (commas in FROM clause) or incorrect join types causes unnecessary data processing. Poorly defined join conditions lead to Cartesian products, overwhelming memory and tempdb.  
 
 *Remediation:*  
-Refactor queries: avoid SELECT *, use explicit columns, optimize joins.  
-
-== 🔄 Problematic Execution Plans
-Execution plans become problematic when the optimizer picks inefficient strategies due to parameter sniffing, outdated stats, or schema changes. These plans can cause unexpected slowdowns even on previously fast queries.
-
-*Root Cause:*  
-Inefficient plans due to parameter sniffing or outdated stats.  
-
-*Remediation:*  
-Review execution plans, use OPTIMIZE FOR, or parameterize queries properly.  
-
-== 🔒 Excessive Blocking
-When transactions hold locks for too long, other sessions are blocked waiting for resources. This leads to slow queries, timeouts, and even deadlocks under high concurrency.
-
-*Root Cause:*  
-Long transactions and locking cause blocked processes.  
-
-*Remediation:*  
-Break long transactions, use proper isolation levels, and monitor blocking sessions.  
-
-== ⚔️ Deadlocks
-Deadlocks happen when two transactions wait on each other’s resources indefinitely. This halts progress and requires one transaction to be killed, causing application errors.
-
-*Root Cause:*  
-Competing transactions acquire locks in different orders.  
-
-*Remediation:*  
-Use TRY/CATCH with retry logic, ensure consistent access order, and optimize indexing.  
-
-== 🔁 Non-Set-Based Operations
-Using cursors or loops (RBAR – Row-By-Agonizing-Row) processes rows one at a time instead of in bulk. This kills performance on large datasets.
-
-*Root Cause:*  
-Row-by-row processing (RBAR) causes poor performance.  
-
-*Remediation:*  
-Rewrite cursors and loops as set-based operations.  
-
-== 🗄 Incorrect Database Design
-Poor schema design—like missing normalization, no primary keys, or inappropriate data types—results in queries that require excessive joins or scans.
-
-*Root Cause:*  
-Normalization or schema design issues lead to inefficient queries.  
-
-*Remediation:*  
-Review schema design, apply normalization or denormalization as needed.  
-
-== ♻️ Poor Execution Plan Reuse
-Ad-hoc queries with varying literals prevent plan reuse and bloat the plan cache. The server wastes CPU compiling new plans for each request.
-
-*Root Cause:*  
-Ad-hoc queries lead to plan cache bloat and poor reuse.  
-
-*Remediation:*  
-Parameterize queries, use stored procedures, and enable forced parameterization.  
-
-== 🔥 Frequent Recompilation of Queries
-Frequent recompilations from OPTION (RECOMPILE), schema changes, or frequent temp table creation increase CPU load and reduce throughput.
-
-*Root Cause:*  
-OPTION (RECOMPILE), schema changes, or temp tables force recompiles.  
-
-*Remediation:*  
-Minimize recompilations by using stable query patterns and cached plans.  
-
-== 🔄 Frequently Updated Columns in Many Indexes
-Updating columns that exist in multiple indexes triggers maintenance on each index, locking resources and increasing I/O.
-
-*Root Cause:*  
-Updates to indexed columns cause index maintenance overhead and locking.  
-
-*Remediation:*  
-Avoid indexing volatile columns; review and minimize unnecessary indexes.  
-
-== 📝 Columns with NVARCHAR(MAX) or Large Size
-Large columns in filters or joins increase memory usage and can cause tempdb spills during sorting or hashing.
-
-*Root Cause:*  
-Large columns increase memory use and slow joins/sorts.  
-
-*Remediation:*  
-Avoid selecting large columns unless necessary; split large data into separate tables.  
-
-== ✨ SELECT *
-Fetching all columns retrieves unnecessary data and prevents use of covering indexes, leading to more I/O.
-
-*Root Cause:*  
-Retrieves all columns, increases I/O, and prevents index-only scans.  
-
-*Remediation:*  
-Select only needed columns to reduce payload and allow covering indexes.  
-
-== 🌟 Celebrity Tables with Too Many Rows
-High-traffic tables (hotspots) with millions of rows suffer from contention and degraded performance under heavy read/write operations.
-
-*Root Cause:*  
-Hotspot tables suffer from locking and latch contention.  
-
-*Remediation:*  
-Partition or shard large tables; archive old data to reduce contention.  
-
-== 📚 Index INCLUDE with NVARCHAR(MAX) Columns
-Including large columns like NVARCHAR(MAX) in non-clustered indexes bloats index size and slows maintenance.
-
-*Root Cause:*  
-Bloating of non-clustered indexes due to large INCLUDE columns.  
-
-*Remediation:*  
-Remove large columns from INCLUDE; consider separate lookup strategies.  
+Always use explicit join syntax (INNER JOIN, LEFT JOIN, etc.) and define precise join conditions in the ON clause. Choose join types carefully: prefer INNER JOIN when only matching rows are needed, and avoid OUTER JOIN unless required. Ensure indexes exist on join keys to support efficient hash or merge joins.  
 
 == 📅 Scalar Functions in WHERE Clauses
 Using functions (e.g., YEAR(), DATEDIFF()) on columns makes them non-SARGable, forcing table scans instead of index seeks.
@@ -144,15 +45,6 @@ Non-SARGable expressions disable index seek and force scans.
 *Remediation:*  
 Rewrite queries to avoid functions on indexed columns.  
 
-== 🔑 Key Lookups Instead of Covering Indexes
-When an index doesn’t include all needed columns, SQL Server performs key lookups for each matching row, causing extra reads.
-
-*Root Cause:*  
-Extra I/O for retrieving missing columns from clustered index.  
-
-*Remediation:*  
-Add missing columns to covering index or INCLUDE clause.  
-
 == 🔄 Implicit Conversions in Joins/Filters
 Mismatched data types force SQL Server to perform implicit conversions, disabling index usage.
 
@@ -162,14 +54,32 @@ Mismatched data types cause scans and prevent index use.
 *Remediation:*  
 Align data types in schema and queries to avoid implicit conversions.  
 
-== 🔗 Inefficient Joins
-Joins are essential for combining data from multiple tables, but if not implemented properly, they can lead to massive intermediate result sets, excessive memory usage, and network overhead.
+== 🗃️ Improper Data Types
+The choice of data types for columns and variables directly impacts how efficiently SQL Server stores and processes data. Using mismatched or overly generic data types increases storage requirements, causes implicit conversions, and reduces index effectiveness.
 
 *Root Cause:*  
-Using implicit join syntax (commas in FROM clause) or incorrect join types causes unnecessary data processing. Poorly defined join conditions lead to Cartesian products, overwhelming memory and tempdb.  
+Improper data types (e.g., VARCHAR(MAX) for short strings, mismatched types in joins) lead to unnecessary data conversions, potential truncation, and prevent indexes from being fully utilized.  
 
 *Remediation:*  
-Always use explicit join syntax (INNER JOIN, LEFT JOIN, etc.) and define precise join conditions in the ON clause. Choose join types carefully: prefer INNER JOIN when only matching rows are needed, and avoid OUTER JOIN unless required. Ensure indexes exist on join keys to support efficient hash or merge joins.  
+Choose data types that match the nature and size of your data. Avoid using large or generic types like VARCHAR(MAX) unless necessary. Ensure data types are consistent across tables and queries to prevent implicit conversions and enable index usage.  
+
+== 📚 Index INCLUDE with NVARCHAR(MAX) Columns
+Including large columns like NVARCHAR(MAX) in non-clustered indexes bloats index size and slows maintenance.
+
+*Root Cause:*  
+Bloating of non-clustered indexes due to large INCLUDE columns.  
+
+*Remediation:*  
+Remove large columns from INCLUDE; consider separate lookup strategies.  
+
+== 🔑 Key Lookups Instead of Covering Indexes
+When an index doesn’t include all needed columns, SQL Server performs key lookups for each matching row, causing extra reads.
+
+*Root Cause:*  
+Extra I/O for retrieving missing columns from clustered index.  
+
+*Remediation:*  
+Add missing columns to covering index or INCLUDE clause.  
 
 == 🌀 Suboptimal Subqueries
 Subqueries are queries nested inside another query, useful for calculations or filtering. However, when not written optimally, they can significantly degrade performance. Subqueries in the SELECT clause run once per outer row, and correlated subqueries prevent efficient index usage and parallelism.
@@ -189,11 +99,128 @@ Using aggregation functions on low-cardinality columns creates few groups but re
 *Remediation:*  
 Apply aggregation only on high-cardinality columns relevant to your analysis. Use the HAVING clause to filter groups after aggregation and minimize rows processed. Avoid unnecessary aggregation in subqueries; pre-filter rows using WHERE when possible.  
 
-== 🗃️ Improper Data Types
-The choice of data types for columns and variables directly impacts how efficiently SQL Server stores and processes data. Using mismatched or overly generic data types increases storage requirements, causes implicit conversions, and reduces index effectiveness.
+== 🔁 Non-Set-Based Operations
+Using cursors or loops (RBAR – Row-By-Agonizing-Row) processes rows one at a time instead of in bulk. This kills performance on large datasets.
 
 *Root Cause:*  
-Improper data types (e.g., VARCHAR(MAX) for short strings, mismatched types in joins) lead to unnecessary data conversions, potential truncation, and prevent indexes from being fully utilized.  
+Row-by-row processing (RBAR) causes poor performance.  
 
 *Remediation:*  
-Choose data types that match the nature and size of your data. Avoid using large or generic types like VARCHAR(MAX) unless necessary. Ensure data types are consistent across tables and queries to prevent implicit conversions and enable index usage.  
+Rewrite cursors and loops as set-based operations.  
+
+== 🗄 Incorrect Database Design
+Poor schema design—like missing normalization, no primary keys, or inappropriate data types—results in queries that require excessive joins or scans.
+
+*Root Cause:*  
+Normalization or schema design issues lead to inefficient queries.  
+
+*Remediation:*  
+Review schema design, apply normalization or denormalization as needed.  
+
+== 📦 Over-Reliance on Scalar UDFs
+Scalar user-defined functions execute row-by-row and prevent parallelism, severely hurting performance.
+
+*Root Cause:*  
+Scalar UDFs are executed row-by-row and slow down queries.  
+
+*Remediation:*  
+Replace scalar UDFs with inline table-valued functions (TVFs).  
+
+== 📊 Outdated Statistics
+Without current statistics, SQL Server cannot estimate row counts accurately, leading to bad join and scan decisions.
+
+*Root Cause:*  
+Optimizer makes poor cardinality estimates with stale stats.  
+
+*Remediation:*  
+Use AUTO_UPDATE_STATISTICS or manual updates.  
+
+== 🔄 Frequently Updated Columns in Many Indexes
+Updating columns that exist in multiple indexes triggers maintenance on each index, locking resources and increasing I/O.
+
+*Root Cause:*  
+Updates to indexed columns cause index maintenance overhead and locking.  
+
+*Remediation:*  
+Avoid indexing volatile columns; review and minimize unnecessary indexes.  
+
+== 🔥 Frequent Recompilation of Queries
+Frequent recompilations from OPTION (RECOMPILE), schema changes, or frequent temp table creation increase CPU load and reduce throughput.
+
+*Root Cause:*  
+OPTION (RECOMPILE), schema changes, or temp tables force recompiles.  
+
+*Remediation:*  
+Minimize recompilations by using stable query patterns and cached plans.  
+
+== 🌟 Celebrity Tables with Too Many Rows
+High-traffic tables (hotspots) with millions of rows suffer from contention and degraded performance under heavy read/write operations.
+
+*Root Cause:*  
+Hotspot tables suffer from locking and latch contention.  
+
+*Remediation:*  
+Partition or shard large tables; archive old data to reduce contention.  
+
+== 🔒 Excessive Blocking
+When transactions hold locks for too long, other sessions are blocked waiting for resources. This leads to slow queries, timeouts, and even deadlocks under high concurrency.
+
+*Root Cause:*  
+Long transactions and locking cause blocked processes.  
+
+*Remediation:*  
+Break long transactions, use proper isolation levels, and monitor blocking sessions.  
+
+== ⚔️ Deadlocks
+Deadlocks happen when two transactions wait on each other’s resources indefinitely. This halts progress and requires one transaction to be killed, causing application errors.
+
+*Root Cause:*  
+Competing transactions acquire locks in different orders.  
+
+*Remediation:*  
+Use TRY/CATCH with retry logic, ensure consistent access order, and optimize indexing.  
+
+== 🗂 Tempdb Contention from Heavy Spills
+Large sorts, hash joins, or intermediate results spill to tempdb, overwhelming it under high concurrency.
+
+*Root Cause:*  
+Hash joins, sorts, or large temp tables overwhelm tempdb.  
+
+*Remediation:*  
+Optimize queries to reduce spills and configure multiple tempdb files.  
+
+== 📊 Poor Partitioning Strategy
+Poorly designed partitioning leads to uneven data distribution and unbalanced query workloads.
+
+*Root Cause:*  
+Skewed partitions lead to unbalanced workload.  
+
+*Remediation:*  
+Design partitions with even distribution; monitor partition hotspots.  
+
+== 🔥 Triggers with Expensive Logic
+Triggers that perform complex logic on every DML operation introduce hidden workload and can block transactions.
+
+*Root Cause:*  
+Triggers add hidden workload on DML operations.  
+
+*Remediation:*  
+Refactor trigger logic or replace with explicit application logic.  
+
+== 🔗 Missing Foreign Keys
+Without foreign keys, the optimizer cannot assume referential integrity, which can lead to poor plans and data inconsistency.
+
+*Root Cause:*  
+Leads to inefficient joins and orphan data issues.  
+
+*Remediation:*  
+Add foreign keys and create supporting indexes for join columns.  
+
+== 🪜 High Index Fragmentation
+Heavily fragmented indexes increase page reads and reduce query performance.  
+
+*Root Cause:*  
+Fragmented indexes degrade scan performance.  
+
+*Remediation:*  
+Reorganize/rebuild indexes regularly.  
