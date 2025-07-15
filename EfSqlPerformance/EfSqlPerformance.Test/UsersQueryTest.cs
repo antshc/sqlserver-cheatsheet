@@ -21,8 +21,6 @@ namespace EfSqlPerformance.Test
 
             var options = new DbContextOptionsBuilder<StackOverflowContext>()
                 .UseSqlServer(ConnectionString)
-                .LogTo(message => _output.WriteLine(message), LogLevel.Information) // Logs to xUnit
-                .EnableSensitiveDataLogging() // Shows parameter values
                 .Options;
 
             using var context = new StackOverflowContext(options);
