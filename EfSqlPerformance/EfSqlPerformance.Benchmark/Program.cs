@@ -25,7 +25,7 @@ namespace EfSqlPerformance.Benchmark
         public void Setup()
         {
             var options = new DbContextOptionsBuilder<StackOverflowContext>()
-                .UseSqlServer("Server=localhost,1433;Database=StackOverflow2010;User Id=sa;Password=yourStrong(!)Password;TrustServerCertificate=True;")
+                .UseSqlServer("Server=localhost,14330;Database=StackOverflow2010;User Id=sa;Password=yourStrong(!)Password;TrustServerCertificate=True;")
                 .Options;
 
             _context = new StackOverflowContext(options);

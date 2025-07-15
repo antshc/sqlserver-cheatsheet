@@ -9,6 +9,13 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EfSqlPerformance.Api", "EfS
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EfSqlPerformance.Benchmark", "EfSqlPerformance.Benchmark\EfSqlPerformance.Benchmark.csproj", "{D057E3F6-9885-47D8-9A8A-2082ADD09800}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EfSqlPerformance.App", "EfSqlPerformance.App\EfSqlPerformance.App.csproj", "{DA437522-476F-481E-9FFA-7CFE96397AB1}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{DEBCEB06-A224-4DFA-A9A6-8051904F8D91}"
+	ProjectSection(SolutionItems) = preProject
+		compose.yaml = compose.yaml
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +34,10 @@ Global
 		{D057E3F6-9885-47D8-9A8A-2082ADD09800}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D057E3F6-9885-47D8-9A8A-2082ADD09800}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D057E3F6-9885-47D8-9A8A-2082ADD09800}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DA437522-476F-481E-9FFA-7CFE96397AB1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DA437522-476F-481E-9FFA-7CFE96397AB1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DA437522-476F-481E-9FFA-7CFE96397AB1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DA437522-476F-481E-9FFA-7CFE96397AB1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -1,0 +1,7 @@
+﻿services:
+  efsqlperformance.app:
+    image: efsqlperformance.app
+    build:
+      context: .
+      dockerfile: EfSqlPerformance.App/Dockerfile
+

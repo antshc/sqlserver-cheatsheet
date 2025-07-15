@@ -7,7 +7,7 @@ namespace EfSqlPerformance.Test
 {
     public class UsersQueryTest
     {
-        private const string ConnectionString = "Server=localhost,1433;Database=StackOverflow2010;User Id=sa;Password=yourStrong(!)Password;TrustServerCertificate=True;";
+        private const string ConnectionString = "Server=localhost,14330;Database=StackOverflow2010;User Id=sa;Password=yourStrong(!)Password;TrustServerCertificate=True;";
         private readonly ITestOutputHelper _output;
 
         public UsersQueryTest(ITestOutputHelper output)
