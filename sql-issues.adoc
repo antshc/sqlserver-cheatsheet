@@ -1,0 +1,204 @@
+= SQL Query Performance Issues – Master List
+
+== 📦 Insufficient or Poor Indexes
+*Root Cause:*  
+Lack of proper indexes leads to full table scans and slow queries.  
+
+*Remediation:*  
+Analyze query patterns and add missing indexes. Use covering indexes where applicable.  
+
+== 📊 Inaccurate or Missing Statistics
+*Root Cause:*  
+Outdated or missing stats cause poor cardinality estimates and bad plans.  
+
+*Remediation:*  
+Update statistics regularly with AUTO_UPDATE_STATISTICS or scheduled jobs.  
+
+== 📝 Bad T-SQL
+*Root Cause:*  
+Poorly written SQL (SELECT *, unnecessary joins) increases workload.  
+
+*Remediation:*  
+Refactor queries: avoid SELECT *, use explicit columns, optimize joins.  
+
+== 🔄 Problematic Execution Plans
+*Root Cause:*  
+Inefficient plans due to parameter sniffing or outdated stats.  
+
+*Remediation:*  
+Review execution plans, use OPTIMIZE FOR, or parameterize queries properly.  
+
+== 🔒 Excessive Blocking
+*Root Cause:*  
+Long transactions and locking cause blocked processes.  
+
+*Remediation:*  
+Break long transactions, use proper isolation levels, and monitor blocking sessions.  
+
+== ⚔️ Deadlocks
+*Root Cause:*  
+Competing transactions acquire locks in different orders.  
+
+*Remediation:*  
+Use TRY/CATCH with retry logic, ensure consistent access order, and optimize indexing.  
+
+== 🔁 Non-Set-Based Operations
+*Root Cause:*  
+Row-by-row processing (RBAR) causes poor performance.  
+
+*Remediation:*  
+Rewrite cursors and loops as set-based operations.  
+
+== 🗄 Incorrect Database Design
+*Root Cause:*  
+Normalization or schema design issues lead to inefficient queries.  
+
+*Remediation:*  
+Review schema design, apply normalization or denormalization as needed.  
+
+== ♻️ Poor Execution Plan Reuse
+*Root Cause:*  
+Ad-hoc queries lead to plan cache bloat and poor reuse.  
+
+*Remediation:*  
+Parameterize queries, use stored procedures, and enable forced parameterization.  
+
+== 🔥 Frequent Recompilation of Queries
+*Root Cause:*  
+OPTION (RECOMPILE), schema changes, or temp tables force recompiles.  
+
+*Remediation:*  
+Minimize recompilations by using stable query patterns and cached plans.  
+
+== 🔄 Frequently Updated Columns in Many Indexes
+*Root Cause:*  
+Updates to indexed columns cause index maintenance overhead and locking.  
+
+*Remediation:*  
+Avoid indexing volatile columns; review and minimize unnecessary indexes.  
+
+== 📝 Columns with NVARCHAR(MAX) or Large Size
+*Root Cause:*  
+Large columns increase memory use and slow joins/sorts.  
+
+*Remediation:*  
+Avoid selecting large columns unless necessary; split large data into separate tables.  
+
+== ✨ SELECT *
+*Root Cause:*  
+Retrieves all columns, increases I/O, and prevents index-only scans.  
+
+*Remediation:*  
+Select only needed columns to reduce payload and allow covering indexes.  
+
+== 🌟 Celebrity Tables with Too Many Rows
+*Root Cause:*  
+Hotspot tables suffer from locking and latch contention.  
+
+*Remediation:*  
+Partition or shard large tables; archive old data to reduce contention.  
+
+== 📚 Index INCLUDE with NVARCHAR(MAX) Columns
+*Root Cause:*  
+Bloating of non-clustered indexes due to large INCLUDE columns.  
+
+*Remediation:*  
+Remove large columns from INCLUDE; consider separate lookup strategies.  
+
+== 📅 Scalar Functions in WHERE Clauses
+*Root Cause:*  
+Non-SARGable expressions disable index seek and force scans.  
+
+*Remediation:*  
+Rewrite queries to avoid functions on indexed columns.  
+
+== 🔑 Key Lookups Instead of Covering Indexes
+*Root Cause:*  
+Extra I/O for retrieving missing columns from clustered index.  
+
+*Remediation:*  
+Add missing columns to covering index or INCLUDE clause.  
+
+== 🔄 Implicit Conversions in Joins/Filters
+*Root Cause:*  
+Mismatched data types cause scans and prevent index use.  
+
+*Remediation:*  
+Align data types in schema and queries to avoid implicit conversions.  
+
+== 🔗 Nested Views (View of View)
+*Root Cause:*  
+Complex nested views confuse the optimizer and lead to suboptimal plans.  
+
+*Remediation:*  
+Flatten views or use CTEs for better optimizer visibility.  
+
+== 📐 Overly Wide Tables
+*Root Cause:*  
+Fetching wide rows increases I/O and memory footprint.  
+
+*Remediation:*  
+Split wide tables into narrow ones or fetch only required columns.  
+
+== 📊 Outdated Statistics
+*Root Cause:*  
+Optimizer makes poor cardinality estimates with stale stats.  
+
+*Remediation:*  
+Use AUTO_UPDATE_STATISTICS or manual updates.  
+
+== 🔗 Excessive Joins Without Supporting Indexes
+*Root Cause:*  
+Large intermediate results and hash spills to tempdb.  
+
+*Remediation:*  
+Add supporting indexes and consider query refactoring.  
+
+== 📦 Over-Reliance on Scalar UDFs
+*Root Cause:*  
+Scalar UDFs are executed row-by-row and slow down queries.  
+
+*Remediation:*  
+Replace scalar UDFs with inline table-valued functions (TVFs).  
+
+== 🔥 Hotspot Updates Causing Latch Contention
+*Root Cause:*  
+Frequent updates to same pages/rows cause latch waits.  
+
+*Remediation:*  
+Use batching, row versioning, or redesign schema to avoid hotspots.  
+
+== 🗂 Tempdb Contention from Heavy Spills
+*Root Cause:*  
+Hash joins, sorts, or large temp tables overwhelm tempdb.  
+
+*Remediation:*  
+Optimize queries to reduce spills and configure multiple tempdb files.  
+
+== 📊 Poor Partitioning Strategy
+*Root Cause:*  
+Skewed partitions lead to unbalanced workload.  
+
+*Remediation:*  
+Design partitions with even distribution; monitor partition hotspots.  
+
+== 🔥 Triggers with Expensive Logic
+*Root Cause:*  
+Triggers add hidden workload on DML operations.  
+
+*Remediation:*  
+Refactor trigger logic or replace with explicit application logic.  
+
+== 🔗 Missing Foreign Keys
+*Root Cause:*  
+Leads to inefficient joins and orphan data issues.  
+
+*Remediation:*  
+Add foreign keys and create supporting indexes for join columns.  
+
+== 🪜 High Index Fragmentation
+*Root Cause:*  
+Fragmented indexes degrade scan performance.  
+
+*Remediation:*  
+Reorganize/rebuild indexes regularly.  
