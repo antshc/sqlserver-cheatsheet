@@ -1,0 +1,143 @@
+= EF Core LINQ Ad Hoc vs Parameterized Queries (Not Obvious Cases)
+
+== ❗ Why Ad Hoc Queries Are Bad
+Ad hoc queries in EF Core happen when literal values or dynamic expressions are **inlined into SQL** instead of being passed as parameters. This causes:
+- ⚡ **Plan Cache Pollution** – Every unique value generates a new cached plan.
+- 🖤 **Higher CPU & Memory Usage** – SQL Server compiles similar queries repeatedly.
+- 🐌 **Slower Performance** – No plan reuse for logically identical queries.
+
+To avoid this, ensure queries are **parameterized** so SQL Server can reuse execution plans.
+
+---
+
+== 🚨 Not Obvious Ad hoc EF Core LINQ Examples
+
+=== ⚠️ Example 1: String Interpolation in `.Where`
+[source,csharp]
+----
+var customerId = 42;
+
+var orders = await dbContext.Orders
+    .Where(o => o.CustomerId.ToString() == $"{customerId}") // String interpolation
+    .ToListAsync();
+----
+SQL generated:
+[source,sql]
+----
+SELECT * FROM Orders WHERE CAST(CustomerId AS nvarchar(max)) = N'42';
+----
+
+Result::
+Each `customerId` produces a **new plan** (no reuse).
+
+---
+
+=== ⚠️ Example 2: Using `.Contains` on a Single-Item Array
+[source,csharp]
+----
+var ids = new[] { 42 };
+
+var orders = await dbContext.Orders
+    .Where(o => ids.Contains(o.CustomerId))
+    .ToListAsync();
+----
+SQL generated:
+[source,sql]
+----
+SELECT * FROM Orders WHERE CustomerId IN (42);
+----
+
+Result::
+Each unique value in `ids` generates a **different cached plan**.
+
+---
+
+=== ⚠️ Example 3: Using `DateTime.Now` Directly
+[source,csharp]
+----
+var orders = await dbContext.Orders
+    .Where(o => o.CreatedDate >= DateTime.Now.AddDays(-7)) // Dynamic expression
+    .ToListAsync();
+----
+SQL generated:
+[source,sql]
+----
+SELECT * FROM Orders WHERE CreatedDate >= '2025-07-15T10:30:00';
+----
+
+Result::
+Every query run at a different moment **inlines a new datetime literal** → new plan.
+
+---
+
+=== ⚠️ Example 4: Conditional Ternary Expression
+[source,csharp]
+----
+var isActive = true;
+
+var orders = await dbContext.Orders
+    .Where(o => o.Status == (isActive ? "Active" : "Inactive"))
+    .ToListAsync();
+----
+SQL generated:
+[source,sql]
+----
+SELECT * FROM Orders WHERE Status = N'Active';
+----
+
+Result::
+Switching `isActive` from `true` to `false` creates **distinct queries**.
+
+---
+
+=== ⚠️ Example 5: Anonymous Type Property Access
+[source,csharp]
+----
+var filter = new { CustomerId = 42 };
+
+var orders = await dbContext.Orders
+    .Where(o => o.CustomerId == filter.CustomerId)
+    .ToListAsync();
+----
+Result::
+Because `filter.CustomerId` is **evaluated at translation**, each unique value inlines into SQL.
+
+---
+
+== ✅ Fixed Parameterized Versions
+
+=== 👍 Example 3 Fixed: Precompute DateTime
+[source,csharp]
+----
+var sevenDaysAgo = DateTime.Now.AddDays(-7);
+
+var orders = await dbContext.Orders
+    .Where(o => o.CreatedDate >= sevenDaysAgo)
+    .ToListAsync();
+----
+SQL generated:
+[source,sql]
+----
+exec sp_executesql N'SELECT * FROM Orders WHERE CreatedDate >= @__sevenDaysAgo_0',
+                   N'@__sevenDaysAgo_0 datetime2', @__sevenDaysAgo_0='2025-07-08 10:30:00';
+----
+
+Result::
+Plan **reused** with different parameter values.
+
+---
+
+== 🔥 Summary Table: Ad hoc vs Parameterized
+[cols="1,1,1", options="header"]
+|===
+| Pattern                              | Ad hoc Behavior                    | Parameterized Fix
+| String interpolation                 | New plan per unique literal        | Use variable in LINQ
+| `.Contains` with single item array   | Inlines literal in SQL             | Pass single value directly
+| `DateTime.Now` inside LINQ           | Inlines timestamp literal          | Precompute value before query
+| Ternary expression in LINQ           | Inlines result into SQL            | Precompute result variable
+| Anonymous type property              | Inlines property into SQL          | Use strongly-typed variable
+|===
+
+== 📘 See also
+- https://learn.microsoft.com/ef/core/querying/client-eval[EF Core Client Evaluation Pitfalls]
+- https://learn.microsoft.com/ef/core/performance/query-performance#parameterization[EF Core Query Parameterization Guidance]

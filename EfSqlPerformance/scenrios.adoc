@@ -1,0 +1,58 @@
+1. Browse Questions List (Pagination)
+- Simulate users loading homepage or latest questions feed.
+- Includes paging through results (20–50 questions per page).
+- Randomize page numbers for distributed load.
+
+2. View Question Detail with Answers
+- Users open question pages.
+- Load question content, answers, comments, and related sidebar questions.
+- Randomize question IDs to avoid caching bias.
+
+3. Search Questions
+- Users perform searches using:
+  - Popular tags (e.g., c#, sql, javascript).
+  - Free text queries (e.g., "how to join tables").
+  - Advanced filters (sort by votes, newest, unanswered).
+- Vary query complexity and concurrency.
+
+4. Post New Question
+- Simulate registered users posting new questions:
+  - Random titles, bodies, and tags.
+- Include 5–10% failed submissions to simulate validation errors.
+
+5. Post Answer
+- Users submit answers to existing questions.
+- Vary answer lengths from short to detailed.
+- Occasionally simulate submission failures (session expired, validation fail).
+
+6. Upvote/Downvote
+- Users vote on questions and answers.
+- Include vote retractions in 10% of cases.
+- Respect voting rate limits.
+
+7. Add/Edit Comment
+- Users add comments to questions and answers.
+- Occasionally edit or delete comments.
+
+8. User Authentication
+- Simulate login, logout, and session expiration.
+- Mix between new registrations and returning user logins.
+
+9. Profile Viewing
+- Users view profiles (their own and others):
+  - Reputation history.
+  - Activity feed.
+  - Badges.
+- Occasionally simulate profile edits (5% of cases).
+
+10. Tag Browsing
+- Users browse tag-specific pages:
+  - View top questions by tag.
+  - Follow/unfollow tags.
+  - Paginate through tag-specific lists.
+
+Bonus: Background/Passive Load
+- Simulate background system activities:
+  - Reputation recalculations.
+  - Search index updates after posts.
+  - Email notifications for new answers and comments.
