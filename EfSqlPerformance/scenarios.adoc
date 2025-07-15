@@ -1,7 +1,7 @@
 1. Browse Questions List (Pagination)
 - Simulate users loading homepage or latest questions feed.
 - Includes paging through results (20–50 questions per page).
-- Randomize page numbers for distributed load.
+- Randomize page numbers to distribute load.
 
 2. View Question Detail with Answers
 - Users open question pages.
@@ -15,37 +15,42 @@
   - Advanced filters (sort by votes, newest, unanswered).
 - Vary query complexity and concurrency.
 
-4. Post New Question
-- Simulate registered users posting new questions:
-  - Random titles, bodies, and tags.
-- Include 5–10% failed submissions to simulate validation errors.
+4. Search User by Name
+- Simulate users searching for other users by name or partial name.
+- Includes pagination through user search results.
+- Mix common names (many results) and rare names (few results).
 
-5. Post Answer
+5. Post New Question
+- Registered users post new questions:
+  - Random titles, bodies, and tags.
+- Simulate 5–10% failed submissions to mimic validation errors.
+
+6. Post Answer
 - Users submit answers to existing questions.
 - Vary answer lengths from short to detailed.
 - Occasionally simulate submission failures (session expired, validation fail).
 
-6. Upvote/Downvote
+7. Upvote/Downvote
 - Users vote on questions and answers.
 - Include vote retractions in 10% of cases.
 - Respect voting rate limits.
 
-7. Add/Edit Comment
+8. Add/Edit Comment
 - Users add comments to questions and answers.
 - Occasionally edit or delete comments.
 
-8. User Authentication
+9. User Authentication
 - Simulate login, logout, and session expiration.
-- Mix between new registrations and returning user logins.
+- Mix between new user registrations and returning logins.
 
-9. Profile Viewing
+10. Profile Viewing
 - Users view profiles (their own and others):
   - Reputation history.
   - Activity feed.
   - Badges.
 - Occasionally simulate profile edits (5% of cases).
 
-10. Tag Browsing
+11. Tag Browsing
 - Users browse tag-specific pages:
   - View top questions by tag.
   - Follow/unfollow tags.
