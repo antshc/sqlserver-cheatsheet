@@ -1,0 +1,78 @@
+= Understanding IOLatch Waits and Table Row Scans in SQL Server
+
+== 🔥 What is `IOLatch` in SQL Server?
+An **IOLatch wait** occurs when a thread in SQL Server waits to acquire a latch to access a page in memory or to bring a page from disk into memory.
+
+Latches are lightweight synchronization primitives used internally by SQL Server to protect in-memory data structures (like pages in the buffer pool) during read/write operations.
+
+*Why it matters*:  
+When SQL Server scans rows (e.g., full table scan or index scan), it needs to read data pages into memory. If pages aren’t cached in the buffer pool, physical reads from disk trigger **IOLatch waits**.
+
+== 📖 How Table Row Scans Cause `IOLatch`
+When a query performs:
+* Table scan (heap or clustered index)
+* Non-covering index scan
+* Large range scans due to missing or non-optimal indexes
+
+SQL Server will:
+. Issue `PAGEIOLATCH_SH` or `PAGEIOLATCH_EX` waits as it loads data pages from disk.
+. Lock each page (~8KB) with an I/O latch during read operation.
+. Release latch once the page is fully loaded into the buffer pool.
+
+== 📊 Common `IOLatch` Wait Types
+[cols="1,3"]
+|===
+| Wait Type        | Meaning
+
+| PAGEIOLATCH_SH   | Shared latch – reading a page from disk
+| PAGEIOLATCH_EX   | Exclusive latch – writing a page to disk
+| PAGEIOLATCH_UP   | Update latch – modifying a page already in memory
+| PAGEIOLATCH_*    | Indicates physical I/O waits (can be slow if disk I/O is slow)
+|===
+
+== 🚩 Why Are Full Table Row Scans a Problem?
+Full scans can lead to:
+* Increased page reads → more latches → higher waits.
+* Excessive disk I/O if data doesn’t fit in memory.
+* High `PAGEIOLATCH_SH` waits visible in `sys.dm_os_wait_stats`.
+
+== 🧰 How to Investigate
+
+=== 1️⃣ Check Wait Stats
+[source,sql]
+----
+SELECT wait_type, waiting_tasks_count, wait_time_ms
+FROM sys.dm_os_wait_stats
+WHERE wait_type LIKE 'PAGEIOLATCH%'
+ORDER BY wait_time_ms DESC;
+----
+
+=== 2️⃣ Identify Queries Doing Large Scans
+[source,sql]
+----
+SELECT TOP 10 
+    qs.execution_count,
+    qs.total_logical_reads,
+    qs.total_physical_reads,
+    qs.total_elapsed_time / qs.execution_count AS avg_elapsed_ms,
+    qt.text
+FROM sys.dm_exec_query_stats qs
+CROSS APPLY sys.dm_exec_sql_text(qs.sql_handle) qt
+ORDER BY qs.total_physical_reads DESC;
+----
+
+== ✅ How to Fix
+* Add a covering index to avoid full scans.
+* Rewrite queries to reduce large range scans.
+* Ensure data fits in the buffer pool (add memory or optimize memory usage).
+* Consider partitioning data or enabling read-ahead where appropriate.
+
+== 🔥 Summary Cheat Sheet
+[cols="3,3,3"]
+|===
+| Cause                               | Effect                      | Fix
+
+| Full table/index scan               | `PAGEIOLATCH_SH` waits      | Add indexes, filter rows earlier
+| Data not cached in buffer pool      | High disk I/O               | Increase memory, optimize queries
+| Hot pages due to bad design         | Latch contention            | Redesign schema or partition data
+|===
