@@ -1,31 +1,18 @@
-using EfSqlPerformance.Api.Data;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using Xunit.Abstractions;
+using EfSqlPerformance.Test.Fixtures;
 
 namespace EfSqlPerformance.Test
 {
-    public class UsersQueryTest
+    public class UsersQueryTest : QueryTestBase, IClassFixture<DbContextFixture>
     {
-        private const string ConnectionString = "Server=localhost,14330;Database=StackOverflow2010;User Id=sa;Password=yourStrong(!)Password;TrustServerCertificate=True;";
-        private readonly ITestOutputHelper _output;
-
-        public UsersQueryTest(ITestOutputHelper output)
+        public UsersQueryTest(DbContextFixture contextFixture, ITestOutputHelper output)
+            : base(contextFixture, output)
         {
-            _output = output;
         }
 
         [Fact]
         public void GetTopUsersTest()
         {
-
-            var options = new DbContextOptionsBuilder<StackOverflowContext>()
-                .UseSqlServer(ConnectionString)
-                .Options;
-
-            using var context = new StackOverflowContext(options);
-
-            var topUsers = context.Users
+            var topUsers = Context.Users
                 .Where(u => u.Reputation > 1000)
                 .OrderByDescending(u => u.Reputation)
                 .Take(10)
