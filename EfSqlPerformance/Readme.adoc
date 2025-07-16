@@ -1,3 +1,11 @@
+== Run SQL Server in the docker compose
+[source,bash]
+----
+# Download Stack overflow db from the course https://www.brentozar.com/archive/2019/10/how-to-think-like-the-sql-server-engine/
+# open EfSqlPerformance\sqlserver folder
+docker compose -f docker-compose.yml up -d
+----
+
 == EF Core Scaffold Command for StackOverflow2010 Database
 
 This command scaffolds the database models and DbContext into the `EfSqlPerformance.Api` project.

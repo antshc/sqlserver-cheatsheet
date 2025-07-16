@@ -1,5 +1,5 @@
+using EfSqlPerformance.Api.Application.User;
 using EfSqlPerformance.Api.Data;
-using EfSqlPerformance.Test.Fixtures;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -16,12 +16,14 @@ namespace EfSqlPerformance.Test
         }
 
         [Fact]
-        public void GetTopUsersTest()
+        public async Task GetTopUsersByReputation()
         {
-            Parallel.ForEach(
-                Enumerable.Range(0, 10000),
-                new ParallelOptions { MaxDegreeOfParallelism = 10 },
-                _ =>
+            var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+            stopwatch.Start();
+            await Parallel.ForEachAsync(
+                Enumerable.Range(0, 10),
+                new ParallelOptions { MaxDegreeOfParallelism = 2 },
+                async (_, ct) =>
                 {
                     var options = new DbContextOptionsBuilder<StackOverflowContext>()
                         .UseSqlServer(ConnectionString)
@@ -29,13 +31,12 @@ namespace EfSqlPerformance.Test
                         .EnableSensitiveDataLogging() // Shows parameter values
                         .Options;
 
-                    using var context = new StackOverflowContext(options);
-                    context.Users
-                        .Where(u => u.Reputation > 1000)
-                        .OrderByDescending(u => u.Reputation)
-                        .Take(1000)
-                        .ToList();
+                    await using var context = new StackOverflowContext(options);
+                    var query = new UsersQuery(context);
+                    await query.GetTopUsersByReputation();
                 });
+            stopwatch.Stop();
+            _output.WriteLine($"Elapsed time: {stopwatch.Elapsed.TotalSeconds:F2} s ({stopwatch.ElapsedMilliseconds} ms)");
         }
     }
 }
