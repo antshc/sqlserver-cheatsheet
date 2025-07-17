@@ -83,11 +83,27 @@ public partial class StackOverflowContext : DbContext
             entity.Property(e => e.LastEditorDisplayName).HasMaxLength(40);
             entity.Property(e => e.Tags).HasMaxLength(150);
             entity.Property(e => e.Title).HasMaxLength(250);
+
+            entity.HasOne(d => d.AcceptedAnswer).WithMany(p => p.InverseAcceptedAnswer)
+                .HasForeignKey(d => d.AcceptedAnswerId)
+                .HasConstraintName("FK_Posts_AcceptedAnswer");
+
+            entity.HasOne(d => d.OwnerUser).WithMany(p => p.Posts)
+                .HasForeignKey(d => d.OwnerUserId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .HasConstraintName("FK_Posts_OwnerUser");
+
+            entity.HasOne(d => d.PostType).WithMany(p => p.Posts)
+                .HasForeignKey(d => d.PostTypeId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Posts_PostType");
         });
 
         modelBuilder.Entity<Users>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK_Users_Id");
+
+            entity.HasIndex(e => e.Reputation, "IX_Users_Reputation_Includes").IsDescending();
 
             entity.Property(e => e.CreationDate).HasColumnType("datetime");
             entity.Property(e => e.DisplayName).HasMaxLength(40);

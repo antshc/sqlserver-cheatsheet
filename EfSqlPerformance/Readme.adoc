@@ -12,7 +12,7 @@ This command scaffolds the database models and DbContext into the `EfSqlPerforma
 
 [source,bash]
 ----
-dotnet ef dbcontext scaffold "Server=localhost,1433;Database=StackOverflow2010;User Id=sa;Password=yourStrong(!)Password;TrustServerCertificate=True;" Microsoft.EntityFrameworkCore.SqlServer --project EfSqlPerformance.Api --context-dir Data --output-dir Data\Models --context StackOverflowContext --use-database-names --no-onconfiguring --nullable --no-pluralize --force
+dotnet ef dbcontext scaffold "Server=localhost,14330;Database=StackOverflow2010;User Id=sa;Password=yourStrong(!)Password;TrustServerCertificate=True;" Microsoft.EntityFrameworkCore.SqlServer --project EfSqlPerformance.Api --context-dir Data --output-dir Data\Models --context StackOverflowContext --use-database-names --no-onconfiguring --nullable --no-pluralize --force
 ----
 
 === Options Explained

@@ -32,4 +32,6 @@ public partial class Users
     public string? WebsiteUrl { get; set; }
 
     public int? AccountId { get; set; }
+
+    public virtual ICollection<Posts> Posts { get; set; } = new List<Posts>();
 }

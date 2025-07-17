@@ -44,4 +44,12 @@ public partial class Posts
     public string? Title { get; set; }
 
     public int ViewCount { get; set; }
+
+    public virtual Posts? AcceptedAnswer { get; set; }
+
+    public virtual ICollection<Posts> InverseAcceptedAnswer { get; set; } = new List<Posts>();
+
+    public virtual Users? OwnerUser { get; set; }
+
+    public virtual PostTypes PostType { get; set; } = null!;
 }
