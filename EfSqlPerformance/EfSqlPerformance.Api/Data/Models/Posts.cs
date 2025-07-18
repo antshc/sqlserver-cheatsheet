@@ -49,7 +49,11 @@ public partial class Posts
 
     public virtual ICollection<Posts> InverseAcceptedAnswer { get; set; } = new List<Posts>();
 
+    public virtual ICollection<Posts> InverseParent { get; set; } = new List<Posts>();
+
     public virtual Users? OwnerUser { get; set; }
+
+    public virtual Posts? Parent { get; set; }
 
     public virtual PostTypes PostType { get; set; } = null!;
 }

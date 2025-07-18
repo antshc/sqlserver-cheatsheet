@@ -1,6 +1,7 @@
 using EfSqlPerformance.Api.Data;
 using EfSqlPerformance.Api.Domain;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Internal;
 
 namespace EfSqlPerformance.Api.Application.Question;
 
@@ -13,17 +14,20 @@ public class QuestionsQuery
         _context = context;
     }
 
-    public async Task<IEnumerable<Answer>> GetQuestionAnswers(int questionId)
+    public async Task<IEnumerable<Answer>> GetQuestionAnswers(int? questionId = null, int page = 1, int itemsPerPage = 20)
     {
         return await _context.Posts
-            .Where(q => q.Id == questionId)
-            .SelectMany(q => q.InverseAcceptedAnswer.DefaultIfEmpty(), (q, a) => new { q, a }).Where(res=> res.a.PostTypeId == 1)
-            .Select(result => new Answer()
+            .Where(p => p.ParentId == questionId)
+            .OrderByDescending(x => x.LastActivityDate)
+            .Skip((page - 1) * itemsPerPage)
+            .Take(page * itemsPerPage)
+            .Select(p => new Answer()
             {
-                QuestionId = result.q.Id,
-                Title = result.q.Title,
-                AnswerId = result.a.Id,
-                Answerer = result.a.OwnerUser.DisplayName
-            }).ToListAsync();
+                AnswerId = p.Id,
+                QuestionId  = p.ParentId,
+                Title = p.Title,
+                Answerer = p.OwnerUser != null ? p.OwnerUser.DisplayName : null
+            })
+            .ToListAsync();
     }
 }

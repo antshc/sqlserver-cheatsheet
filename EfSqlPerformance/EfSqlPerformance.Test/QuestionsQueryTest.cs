@@ -22,7 +22,7 @@ namespace EfSqlPerformance.Test
             var stopwatch = System.Diagnostics.Stopwatch.StartNew();
             stopwatch.Start();
             await Parallel.ForEachAsync(
-                Enumerable.Range(0, 1),
+                Enumerable.Range(0, 100),
                 new ParallelOptions { MaxDegreeOfParallelism = 10 },
                 async (_, ct) =>
                 {
@@ -34,7 +34,7 @@ namespace EfSqlPerformance.Test
 
                     await using var context = new StackOverflowContext(options);
                     var query = new QuestionsQuery(context);
-                    await query.GetQuestionAnswers(7);
+                    await query.GetQuestionAnswers();
                 });
             stopwatch.Stop();
             _output.WriteLine($"Elapsed time: {stopwatch.Elapsed.TotalSeconds:F2} s ({stopwatch.ElapsedMilliseconds} ms)");

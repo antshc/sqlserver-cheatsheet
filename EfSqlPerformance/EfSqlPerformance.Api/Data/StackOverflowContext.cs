@@ -93,6 +93,10 @@ public partial class StackOverflowContext : DbContext
                 .OnDelete(DeleteBehavior.SetNull)
                 .HasConstraintName("FK_Posts_OwnerUser");
 
+            entity.HasOne(d => d.Parent).WithMany(p => p.InverseParent)
+                .HasForeignKey(d => d.ParentId)
+                .HasConstraintName("FK_Posts_Parent");
+
             entity.HasOne(d => d.PostType).WithMany(p => p.Posts)
                 .HasForeignKey(d => d.PostTypeId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
